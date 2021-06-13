@@ -24,8 +24,8 @@ StringToFile    PROCEDURE(STRING pStr,STRING pFileName)
   DO TestSum
   
   StringToFile(TestsResult,'TestsResult.txt')
-
   RUN('TestsResult.txt')
+
 TestSum             ROUTINE
   DATA
 loc:a   DECIMAL(15,2)
@@ -42,6 +42,7 @@ loc:sum DECIMAL(15,2)
   
   !Assert
   AssertEqual('0.03',loc:sum,'1: TestSum')  
+
 AssertEqual         PROCEDURE(? pExpected,? pActual,STRING pInfo)!,LONG,PROC
   CODE 
   TestsResult =  CHOOSE(TestsResult = '','',CLIP(TestsResult)&'<13,10>')& |         
@@ -59,6 +60,7 @@ buf                     RECORD;STRING(bufSize).
                       END
 pos                   LONG(1)
   CODE
+  
   dosFile{PROP:Name} = pFileName
   CREATE(dosFile)
   IF ERRORCODE() THEN STOP(ERRORCODE()&' '&ERROR()&' '&ERRORFILE());RETURN.
@@ -71,3 +73,4 @@ pos                   LONG(1)
     pos += bufSize
   .
   CLOSE(dosfile)
+  

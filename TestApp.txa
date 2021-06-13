@@ -577,7 +577,7 @@ MODIFIED '2021/06/12' '11:00:56'
 NAME Tests
 [COMMON]
 FROM ABC Source
-MODIFIED '2021/06/12' '14:46:07'
+MODIFIED '2021/06/12' '20:26:01'
 [PROMPTS]
 %GenerateOpenClose LONG  (0)
 %GenerateSaveRestore LONG  (0)
@@ -606,7 +606,6 @@ PROPERTY:END
   DO TestSum
   
   StringToFile(TestsResult,'TestsResult.txt')
-
   RUN('TestsResult.txt')
 [END]
 EMBED %LocalProcedures
@@ -615,6 +614,7 @@ EMBED %LocalProcedures
 PROPERTY:BEGIN
 PRIORITY 5000
 PROPERTY:END
+
 AssertEqual         PROCEDURE(? pExpected,? pActual,STRING pInfo)!,LONG,PROC
   CODE 
   TestsResult =  CHOOSE(TestsResult = '','',CLIP(TestsResult)&'<13,10>')& |         
@@ -632,6 +632,7 @@ buf                     RECORD;STRING(bufSize).
                       END
 pos                   LONG(1)
   CODE
+  
   dosFile{PROP:Name} = pFileName
   CREATE(dosFile)
   IF ERRORCODE() THEN STOP(ERRORCODE()&' '&ERROR()&' '&ERRORFILE());RETURN.
@@ -644,6 +645,7 @@ pos                   LONG(1)
     pos += bufSize
   .
   CLOSE(dosfile)
+  
 [END]
 EMBED %ProcedureRoutines
 [DEFINITION]
@@ -651,6 +653,7 @@ EMBED %ProcedureRoutines
 PROPERTY:BEGIN
 PRIORITY 3500
 PROPERTY:END
+
 TestSum             ROUTINE
   DATA
 loc:a   DECIMAL(15,2)
