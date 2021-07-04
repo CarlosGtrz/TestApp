@@ -566,7 +566,53 @@ WHEN  ('Tests.clw') ('1')
 [PROGRAM]
 [COMMON]
 FROM ABC ABC
-MODIFIED '2021/06/12' '11:00:40'
+MODIFIED '2021/07/03' '19:40:28'
+[EMBED]
+EMBED %GlobalMap
+[DEFINITION]
+[SOURCE]
+PROPERTY:BEGIN
+PRIORITY 4000
+PROPERTY:END
+StringToFile(STRING pStr,STRING pFileName)
+DebugView(STRING pStr)
+MODULE('win32')
+  DebugViewApi(*CSTRING cStr),PASCAL,RAW,NAME('OutputDebugStringA')      
+END
+[END]
+EMBED %ProgramProcedures
+[DEFINITION]
+[SOURCE]
+PROPERTY:BEGIN
+PRIORITY 4000
+PROPERTY:END
+StringToFile        PROCEDURE(STRING pStr,STRING pFileName)
+bufSize               EQUATE(32768)
+dosFile               FILE,DRIVER('DOS'),CREATE
+buf                     RECORD;STRING(bufSize).
+                      END
+pos                   LONG(1)
+  CODE  
+  dosFile{PROP:Name} = pFileName
+  CREATE(dosFile)
+  IF ERRORCODE() THEN STOP(ERRORCODE()&' '&ERROR()&' '&ERRORFILE());RETURN.
+  OPEN(dosFile)
+  LOOP UNTIL pos > LEN(pStr)
+    dosFile.Buf = pStr[ pos : LEN(pStr) ]
+    ADD(dosFile,CHOOSE(pos + bufSize > LEN(pStr), |
+        LEN(pStr) - pos + 1, |
+        bufSize))
+    pos += bufSize
+  .
+  CLOSE(dosfile)
+    
+DebugView           PROCEDURE(STRING pStr)
+tcstr                 CSTRING(SIZE(pStr)+3)
+  CODE
+  tcstr = '|'&pStr&'|'
+  DebugViewApi(tcstr)
+[END]
+[END]
 [END]
 [MODULE]
 NAME 'Tests.clw'
@@ -577,7 +623,7 @@ MODIFIED '2021/06/12' '11:00:56'
 NAME Tests
 [COMMON]
 FROM ABC Source
-MODIFIED '2021/06/12' '20:26:01'
+MODIFIED '2021/07/03' '19:45:33'
 [PROMPTS]
 %GenerateOpenClose LONG  (0)
 %GenerateSaveRestore LONG  (0)
@@ -588,11 +634,11 @@ EMBED %DataSection
 PROPERTY:BEGIN
 PRIORITY 1300
 PROPERTY:END
-TestsResult             ANY
   MAP
 AssertEqual PROCEDURE(? pExpected,? pActual,STRING pInfo),LONG,PROC
-StringToFile    PROCEDURE(STRING pStr,STRING pFileName)
-  .
+  END  
+
+TestsResult             ANY
 [END]
 EMBED %ProcessedCode
 [DEFINITION]
@@ -616,36 +662,22 @@ PRIORITY 5000
 PROPERTY:END
 
 AssertEqual         PROCEDURE(? pExpected,? pActual,STRING pInfo)!,LONG,PROC
+TestResult ANY
   CODE 
-  TestsResult =  CHOOSE(TestsResult = '','',CLIP(TestsResult)&'<13,10>')& |         
-    CHOOSE(pExpected = pActual,'ok','--')&'<9>'& |
-    CLIP(pInfo)&'<13,10>' & |
-    'Exp: <'&CLIP(pExpected)&'>'&'<13,10>'& |
-    'Act: <'&CLIP(pActual)&'>' & |
-    '<13,10>'
+  
+  TestResult = CHOOSE(pExpected = pActual,'ok','--')&'<9>'& |
+      pInfo&'<13,10>' & |
+      'Exp: <'&pExpected&'>'&'<13,10>'& |
+      'Act: <'&pActual&'>' & |
+      '<13,10>'
+  
+  DebugView(TestResult)
+  
+  TestsResult =  CHOOSE(TestsResult = '','',TestsResult&'<13,10>')& |         
+      TestResult  
+  
   RETURN CHOOSE(pExpected = pActual)
-  
-StringToFile        PROCEDURE(STRING pStr,STRING pFileName)
-bufSize               EQUATE(32768)
-dosFile               FILE,DRIVER('DOS'),CREATE
-buf                     RECORD;STRING(bufSize).
-                      END
-pos                   LONG(1)
-  CODE
-  
-  dosFile{PROP:Name} = pFileName
-  CREATE(dosFile)
-  IF ERRORCODE() THEN STOP(ERRORCODE()&' '&ERROR()&' '&ERRORFILE());RETURN.
-  OPEN(dosFile)
-  LOOP UNTIL pos > LEN(pStr)
-    dosFile.Buf = pStr[ pos : LEN(pStr) ]
-    ADD(dosFile,CHOOSE(pos + bufSize > LEN(pStr), |
-      LEN(pStr) - pos + 1, |
-      bufSize))
-    pos += bufSize
-  .
-  CLOSE(dosfile)
-  
+    
 [END]
 EMBED %ProcedureRoutines
 [DEFINITION]
@@ -664,6 +696,7 @@ loc:sum DECIMAL(15,2)
   !Arrange
   loc:a = .01
   loc:b = .02
+  DebugView('a:'&loc:a&' b:'&loc:b)
   
   !Act
   loc:sum = loc:a + loc:b
